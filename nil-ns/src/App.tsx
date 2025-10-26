@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import './App.css';
 import { type Keplr } from "@keplr-wallet/types";
 import { SigningStargateClient, coins } from "@cosmjs/stargate";
+import axios from 'axios';
 
 export default function App() {
 
@@ -75,6 +76,12 @@ export default function App() {
 
       const txId = result.transactionHash
       console.log(`Tx Confirmed, Tx ID: ${txId}`);
+      const response = await axios.post('http://localhost:3000/',
+        {
+          txId: txId
+        }
+      )
+      console.log(response.data);
       return txId
     } catch (e) {
       console.log(e)
@@ -133,7 +140,7 @@ export default function App() {
               Cancel
             </button>
 
-            
+
           </div>
         </div>
       </div>
@@ -152,6 +159,7 @@ export default function App() {
           >
             Connect
           </button>
+
         </div>
         :
         <div className='bg-slate-800 mt-30 h-1/3 w-full flex justify-center items-center'>
@@ -162,7 +170,6 @@ export default function App() {
           ) : creationFailed ? (
             <CreationFailed />
           ) : (
-            // your input + create button form here
             <div className='w-4/5 h-1/3 text-center shadow-lg rounded-2xl shadow-emerald-400 flex'>
               <input
                 className='rounded-s-xl text-2xl bg-slate-800 w-3/5 h-full text-center focus:outline-none'
@@ -184,6 +191,20 @@ export default function App() {
                 }}
               >
                 Create
+              </button>
+              <button className='bg-slate-700 rounded-xl w-2/5 h-full ml-50 p6 text-center flex justify-self-center justify-center items-center
+       duration-200 ease-out shadow-lg shadow-emerald-400 hover:bg-slate-500'
+                onClick={async () => {
+                  const response = await axios.post('http://localhost:3000/',
+                    {
+                      test: '1'
+                    }
+                  )
+                  console.log(response.data);
+                }}
+
+              >
+                Test Backend
               </button>
             </div>
           )}
