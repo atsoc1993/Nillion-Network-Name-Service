@@ -11,7 +11,10 @@
       "properties": {
         "_id": { "type": "string", "format": "uuid" },
         "name": { "type": "string", "minLength": 1 },
-        "address": { "type": "string" }
+        "address": { "type": "string" },
+        "twitter_link": { "type": ["string", "null"], "format": "uri" },
+        "twitter_verified": { "type": "boolean", "default": false },
+        "gmail": { "type": ["string", "null"], "format": "email" }
       },
       "required": ["_id", "name", "address"],
       "additionalProperties": false
