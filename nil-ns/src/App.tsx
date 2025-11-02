@@ -1,59 +1,40 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useContext, useCallback } from 'react';
 import './App.css';
-import { type Keplr } from "@keplr-wallet/types";
 import { SigningStargateClient, coins } from "@cosmjs/stargate";
 import axios from 'axios';
+import NavMenu from './NavMenu';
+import { KeplrContext } from './WalletContext';
 
 export default function App() {
 
   const [nilNameText, setNilNameText] = useState<string>('');
   const nilNameInputRef = useRef<HTMLInputElement | null>(null);
-  const [keplr, setKeplr] = useState<Keplr | null>(null);
   const [creating, setCreating] = useState<boolean>(false);
   const [creationTxID, setCreationTxId] = useState<string>('');
   const [creationFailed, setCreationFailed] = useState<boolean>(false);
-  // const getKeplrFromProvider = async () => {
-  //   return await Keplr.getKeplr();
-  // };
 
-  const getKeplr = async () => {
+  const KeplrCtx = useContext(KeplrContext);
+
+  const getKeplr = useCallback(async () => {
     if (!window.keplr) {
       alert("Please install the Keplr extension.");
       return;
     }
-
+    
     const keplr = window.keplr;
-    console.log(keplr);
     const chainId = "nillion-chain-testnet-1";
     await keplr.enable(chainId);
-    setKeplr(keplr)
-  };
+    if (!KeplrCtx?.[1]) return;
+    KeplrCtx[1](keplr)
+  }, [KeplrCtx]);
 
-  useEffect(() => {
-    if (creating) {
-      console.log("Is creating")
-      Create();
-    }                // console.log("Calculate & Prompt Payment here, create backend listener to await payment, then create DB entry and display user page afterwards for configuration. The celebration effect would be nice as well.")
-
-  }, [creating, creationFailed])
-
-  async function Create() {
-    const txId = await sendTx(nilNameText)
-    if (txId) {
-      setCreating(false);
-      setCreationTxId(txId);
-    } else {
-      setCreating(false);
-      setCreationFailed(true);
-    }
-  }
-  async function sendTx(memo: string): Promise<string> {
-    if (!keplr) {
+  const sendTx = useCallback(async (memo: string): Promise<string> => {
+    if (!KeplrCtx?.[0]) {
       alert("Keplr not connected.");
       return '';
     }
+    const keplr = KeplrCtx[0]
     try {
-
       const CHAIN_ID = "nillion-chain-testnet-1";
       const RPC = "https://testnet-nillion-rpc.lavenderfive.com";
 
@@ -65,7 +46,6 @@ export default function App() {
       const to = from
       const fee = { amount: coins(5000, "unil"), gas: "200000" };
 
-
       const result = await client.sendTokens(
         from,
         to,
@@ -76,7 +56,7 @@ export default function App() {
 
       const txId = result.transactionHash
       console.log(`Tx Confirmed, Tx ID: ${txId}`);
-      const response = await axios.post('http://localhost:3000/',
+      const response = await axios.post('http://localhost:3000/new_name',
         {
           txId: txId
         }
@@ -87,7 +67,25 @@ export default function App() {
       console.log(e)
       return ''
     }
-  }
+  }, [KeplrCtx]);
+
+  const Create = useCallback(async () => {
+    const txId = await sendTx(nilNameText)
+    if (txId) {
+      setCreating(false);
+      setCreationTxId(txId);
+    } else {
+      setCreating(false);
+      setCreationFailed(true);
+    }
+  }, [nilNameText, sendTx]);
+
+  useEffect(() => {
+    if (creating) {
+      Create();
+    }
+  }, [creating, Create])
+
 
   function PendingCreation() {
     return (
@@ -149,9 +147,10 @@ export default function App() {
 
   return (
     <div className="p6 h-full w-full bg-slate-800">
+      <NavMenu  page='create'/>
       <h1 className='text-8xl text-center p-6 font-extrabold'>NIL NS</h1>
       <p className='text-center'>Nillion Name Service</p>
-      {!keplr ?
+      {!KeplrCtx[0] ?
         <div className='bg-slate-800 mt-30 h-1/3 w-full flex justify-center items-center'>
           <button className='bg-slate-700 rounded-xl w-2/5 h-1/4 p6 text-center flex justify-self-center justify-center items-center
        duration-200 ease-out shadow-lg shadow-emerald-400 hover:bg-slate-500'
@@ -191,20 +190,6 @@ export default function App() {
                 }}
               >
                 Create
-              </button>
-              <button className='bg-slate-700 rounded-xl w-2/5 h-full ml-50 p6 text-center flex justify-self-center justify-center items-center
-       duration-200 ease-out shadow-lg shadow-emerald-400 hover:bg-slate-500'
-                onClick={async () => {
-                  const response = await axios.post('http://localhost:3000/',
-                    {
-                      test: '1'
-                    }
-                  )
-                  console.log(response.data);
-                }}
-
-              >
-                Test Backend
               </button>
             </div>
           )}
